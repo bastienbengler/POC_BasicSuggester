@@ -5,7 +5,6 @@ import {Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import {debounceTime, distinctUntilChanged, filter, map, merge, catchError, tap, switchMap } from 'rxjs/operators';
 import 'rxjs/add/operator/debounceTime';
-import {NgbTypeahead} from '@ng-bootstrap/ng-bootstrap';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import 'rxjs/add/operator/pluck';
 import 'rxjs/add/operator/distinctUntilChanged';
@@ -14,6 +13,7 @@ import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/map';
 import "rxjs/add/observable/of";
 import { pluck } from 'rxjs/operators';
+import {NgbTypeaheadConfig} from '@ng-bootstrap/ng-bootstrap';
 
 const httpOptions = {
   headers: new HttpHeaders({
@@ -51,34 +51,28 @@ export class RequestSuggesterService {
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  providers: [RequestSuggesterService]
+  providers: [RequestSuggesterService, NgbTypeaheadConfig]
 })
 export class AppComponent {
   title = 'app';
   
   public searchForm : FormGroup;
-  public basicsuggestion : string[]
 
   model: any;
   searching = false;
   searchFailed = false;
   hideSearchingWhenUnsubscribed = new Observable(() => () => this.searching = false);
 
-
-
   constructor(private fb: FormBuilder,
     private http: HttpClient,
-    private _service: RequestSuggesterService) {
+    private _service: RequestSuggesterService,
+    config: NgbTypeaheadConfig) {
     this.createForm();
+    //config.showHint = true;
+    //config.editable = false;
   }
 
   ngOnInit() {
-    this.searchForm.get('name').valueChanges
-    .debounceTime(500)
-    .subscribe(val => {
-      this.http.put<Array<zelp>>("/api/suggester", {"val": this.searchForm.get('name').value }, httpOptions)
-      .subscribe(data => this.basicsuggestion = data.map(x => x.word));
-    })
   }
 
   createForm() {
@@ -92,9 +86,18 @@ export class AppComponent {
     debounceTime(400),
     distinctUntilChanged(),
     tap(() => this.searching = true),
+    filter(term => term.trim().split(" ")[term.trim().split(" ").length - 1] != null),
     switchMap(term =>
-      this.http.put("/api/suggester", {"val": term }, httpOptions)
-      .map((data : object[]) => data.map((el : zelp) => el.word)) // << ES6
-    ),
-    tap(()=> this.searching = false))
+      this.http.put("/api/suggester", {"val": term.trim().split(" ")[term.trim().split(" ").length - 1] }, httpOptions)
+      .map((data : object[]) => (data && data.map((el : zelp) => el.word)) || [])),
+      tap(()=> this.searching = false)
+    )
+
+  myformatter(value: any) {
+    console.log("ici");
+    let tmp = this._inputValueBackup.trim().split(" ");
+      tmp.pop();
+      tmp.push(value);
+    return tmp.join(' ');
+  }
 }

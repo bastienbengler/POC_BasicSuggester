@@ -20,7 +20,8 @@
   <label for="typeahead-http">Ask anything to BasicSuggester :</label>
 
   <input id="typeahead-http" type="text" class="form-control"
-  [class.is-invalid]="searchFailed" [(ngModel)]="model" [ngbTypeahead]="searchCustom" placeholder="Wikipedia search" />
+  [class.is-invalid]="searchFailed" [(ngModel)]="model" [inputFormatter]=myformatter 
+  [resultFormatter]=myformatterr [ngbTypeahead]="searchCustom" placeholder="Wikipedia search" />
   <span *ngIf="searching">searching...</span>
   <!-- <div class="invalid-feedback" *ngIf="searchFailed">Sorry, suggestions could not be loaded.</div> -->
 </div>
